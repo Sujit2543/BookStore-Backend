@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
+app.get('/', (req,res)=>{
+  res.send("HOME");
+})
+
 // --- Register API ---
 app.post("/register", async (req, res) => {
   try {
