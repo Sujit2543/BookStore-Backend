@@ -9,30 +9,33 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-// ✅ Configure CORS
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",            
-  "https://bloodbankbymrx.vercel.app"    
-];
 
+// ✅ Configure CORS for your frontend
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://book-store-frontend.vercel.app",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
 
-
+// ✅ MongoDB Connection
+if (!process.env.MONGO_URI) {
+  console.error("❌ Missing MONGO_URI");
+  process.exit(1);
+}
 
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("MongoDB connected successfully"))
-  .catch((err) => console.error("MongoDB connection failed:", err));
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.error("❌ MongoDB connection failed:", err));
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
@@ -44,9 +47,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-app.get("/", (req, res) => {
-  res.send("HOME");
-});
+app.get("/", (req, res) => res.send("HOME API Working"));
 
 app.post("/register", async (req, res) => {
   try {
@@ -70,6 +71,7 @@ app.post("/register", async (req, res) => {
     await newUser.save();
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
+    console.error("❌ Register error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -88,10 +90,13 @@ app.post("/login", async (req, res) => {
     if (!isPasswordValid)
       return res.status(401).json({ message: "Invalid credentials" });
 
+    if (!process.env.JWT_SECRET)
+      return res.status(500).json({ message: "JWT secret missing" });
+
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "10D" }
+      { expiresIn: "10d" }
     );
 
     res.status(200).json({
@@ -100,6 +105,7 @@ app.post("/login", async (req, res) => {
       redirectTo: "/home",
     });
   } catch (err) {
+    console.error("❌ Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
