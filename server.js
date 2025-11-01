@@ -9,7 +9,22 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+// ✅ Configure CORS
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",            
+  "https://bloodbankbymrx.vercel.app"    
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+
 
 mongoose
   .connect(process.env.MONGO_URI, {
