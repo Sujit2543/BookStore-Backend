@@ -23,19 +23,28 @@ app.use(
   })
 );
 
-// ✅ MongoDB Connection
-if (!process.env.MONGO_URI) {
-  console.error("❌ Missing MONGO_URI");
-  process.exit(1);
+// 🧩 MongoDB Connection
+let isConnected = false;
+async function ConnectedToDB() {
+      mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    })
+    .then(() => {
+      isConnected = true
+      console.log("MongoDB Connected")
+    })
+    .catch(err => console.error("MongoDB Connection Error:", err));
 }
 
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch((err) => console.error("❌ MongoDB connection failed:", err));
+// middleware 
+app.use((req,res,next)=>{
+  if(!isConnected){
+    ConnectedToDB();
+  }
+  next();
+})
+
 
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
